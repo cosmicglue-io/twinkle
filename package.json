@@ -1,0 +1,21 @@
+{
+  "name": "twinkle-appcast",
+  "version": "0.1.0",
+  "description": "Static Sparkle appcasts and offline update metrics",
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "twinkle": "src/cli.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE-APACHE"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
