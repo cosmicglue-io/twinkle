@@ -7,7 +7,9 @@ node src/cli.mjs render appcast.json appcast.xml
 node src/cli.mjs report appcast.json access-log.tsv --html report.html
 ```
 
-The generator requires HTTPS enclosure URLs, positive content lengths, valid timestamps, and at least one EdDSA or DSA signature. It orders releases by publication time and safely encodes XML and inline release notes.
+Installable releases require HTTPS enclosure URLs, positive content lengths, valid timestamps, and at least one EdDSA or DSA signature. A release can instead set `downloadPageUrl` to publish an informational update that opens a manual-download page without an enclosure. This is useful when moving users across a lost signing key; keep legacy and current signing-key feeds separate so future automatic updates remain valid.
+
+The generator orders releases by publication time and safely encodes XML and inline release notes.
 
 The reporter reads CloudFront standard-log files, deduplicates rows by edge request ID, and returns JSON with update checks, versions, operating systems, and estimated current-version adoption. Its optional HTML output is static. These measurements are update checks—not installations or completed downloads.
 

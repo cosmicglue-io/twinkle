@@ -26,3 +26,35 @@ test("rejects unsigned and insecure releases", () => {
   assert.throws(() => validateManifest({ title: "Acme", releases: [{ ...release, edSignature: undefined }] }), /signature/);
   assert.throws(() => validateManifest({ title: "Acme", releases: [{ ...release, url: "http://example.com/a.dmg" }] }), /HTTPS/);
 });
+
+test("renders an informational update as a manual download", () => {
+  const manualRelease = {
+    version: "43",
+    shortVersion: "2.0.0",
+    publishedAt: "2026-02-03T04:05:06Z",
+    description: "The signing key changed. Download this version manually.",
+    downloadPageUrl: "https://example.com/downloads/2.0.0",
+  };
+  const xml = renderFeed({ title: "Acme", releases: [manualRelease] });
+
+  assert.match(xml, /<link>https:\/\/example\.com\/downloads\/2\.0\.0<\/link>/);
+  assert.doesNotMatch(xml, /<enclosure/);
+});
+
+test("rejects ambiguous or insecure manual updates", () => {
+  const manualRelease = {
+    version: "43",
+    shortVersion: "2.0.0",
+    publishedAt: "2026-02-03T04:05:06Z",
+    downloadPageUrl: "https://example.com/downloads/2.0.0",
+  };
+
+  assert.throws(
+    () => validateManifest({ title: "Acme", releases: [{ ...manualRelease, url: release.url }] }),
+    /cannot mix/,
+  );
+  assert.throws(
+    () => validateManifest({ title: "Acme", releases: [{ ...manualRelease, downloadPageUrl: "http://example.com" }] }),
+    /HTTPS/,
+  );
+});

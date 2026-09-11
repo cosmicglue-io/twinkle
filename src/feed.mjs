@@ -31,20 +31,37 @@ export function validateManifest(manifest) {
   const versions = new Set();
   for (const [index, release] of manifest.releases.entries()) {
     const prefix = `releases[${index}]`;
-    for (const field of ["version", "shortVersion", "publishedAt", "url", "mimeType"]) {
+    for (const field of ["version", "shortVersion", "publishedAt"]) {
       requiredString(release[field], `${prefix}.${field}`);
-    }
-    if (!Number.isSafeInteger(release.length) || release.length <= 0) {
-      throw new Error(`${prefix}.length must be a positive integer`);
-    }
-    if (!release.edSignature && !release.dsaSignature) {
-      throw new Error(`${prefix} needs an EdDSA or DSA signature`);
     }
     if (Number.isNaN(Date.parse(release.publishedAt))) {
       throw new Error(`${prefix}.publishedAt must be an ISO-8601 timestamp`);
     }
-    const url = new URL(release.url);
-    if (url.protocol !== "https:") throw new Error(`${prefix}.url must use HTTPS`);
+
+    if (release.downloadPageUrl !== undefined) {
+      requiredString(release.downloadPageUrl, `${prefix}.downloadPageUrl`);
+      for (const field of ["url", "length", "mimeType", "edSignature", "dsaSignature"]) {
+        if (release[field] !== undefined) {
+          throw new Error(`${prefix} cannot mix downloadPageUrl with enclosure fields`);
+        }
+      }
+      if (new URL(release.downloadPageUrl).protocol !== "https:") {
+        throw new Error(`${prefix}.downloadPageUrl must use HTTPS`);
+      }
+    } else {
+      for (const field of ["url", "mimeType"]) {
+        requiredString(release[field], `${prefix}.${field}`);
+      }
+      if (!Number.isSafeInteger(release.length) || release.length <= 0) {
+        throw new Error(`${prefix}.length must be a positive integer`);
+      }
+      if (!release.edSignature && !release.dsaSignature) {
+        throw new Error(`${prefix} needs an EdDSA or DSA signature`);
+      }
+      if (new URL(release.url).protocol !== "https:") {
+        throw new Error(`${prefix}.url must use HTTPS`);
+      }
+    }
     if (versions.has(release.version)) throw new Error(`duplicate version ${release.version}`);
     versions.add(release.version);
   }
@@ -74,10 +91,14 @@ export function renderFeed(input) {
     if (release.releaseNotesUrl) {
       lines.push(`      <sparkle:releaseNotesLink>${escapeXml(release.releaseNotesUrl)}</sparkle:releaseNotesLink>`);
     }
-    let enclosure = `      <enclosure url="${escapeXml(release.url)}" length="${release.length}" type="${escapeXml(release.mimeType)}"`;
-    if (release.edSignature) enclosure += ` sparkle:edSignature="${escapeXml(release.edSignature)}"`;
-    if (release.dsaSignature) enclosure += ` sparkle:dsaSignature="${escapeXml(release.dsaSignature)}"`;
-    lines.push(`${enclosure}/>`);
+    if (release.downloadPageUrl) {
+      lines.push(`      <link>${escapeXml(release.downloadPageUrl)}</link>`);
+    } else {
+      let enclosure = `      <enclosure url="${escapeXml(release.url)}" length="${release.length}" type="${escapeXml(release.mimeType)}"`;
+      if (release.edSignature) enclosure += ` sparkle:edSignature="${escapeXml(release.edSignature)}"`;
+      if (release.dsaSignature) enclosure += ` sparkle:dsaSignature="${escapeXml(release.dsaSignature)}"`;
+      lines.push(`${enclosure}/>`);
+    }
     lines.push("    </item>");
   }
   lines.push("  </channel>", "</rss>", "");
