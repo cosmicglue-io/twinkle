@@ -1,0 +1,16 @@
+{
+  "title": "Acme",
+  "releases": [
+    {
+      "version": "42",
+      "shortVersion": "1.2.3",
+      "publishedAt": "2026-01-02T03:04:05Z",
+      "minimumSystemVersion": "14.0",
+      "description": "A signed example release.",
+      "url": "https://example.com/Acme.dmg",
+      "length": 1234,
+      "mimeType": "application/octet-stream",
+      "edSignature": "replace-with-a-real-signature"
+    }
+  ]
+}
