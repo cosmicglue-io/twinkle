@@ -1,4 +1,18 @@
 import { readFile } from "node:fs/promises";
+import { gunzip } from "node:zlib";
+import { promisify } from "node:util";
+
+const gunzipAsync = promisify(gunzip);
+
+async function readLog(path) {
+  const contents = await readFile(path);
+  if (!path.endsWith(".gz")) return contents.toString("utf8");
+  try {
+    return (await gunzipAsync(contents)).toString("utf8");
+  } catch (error) {
+    throw new Error(`could not decompress ${path}: ${error.message}`, { cause: error });
+  }
+}
 
 function increment(map, key) {
   const normalized = key || "unknown";
@@ -17,7 +31,7 @@ export async function summarizeLogs(paths, latestVersion) {
   let currentVersionChecks = 0;
 
   for (const path of paths) {
-    const text = await readFile(path, "utf8");
+    const text = await readLog(path);
     let fields = [];
     for (const line of text.split(/\r?\n/)) {
       if (line.startsWith("#Fields: ")) {
