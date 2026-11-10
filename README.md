@@ -11,7 +11,16 @@ Installable releases require HTTPS enclosure URLs, positive content lengths, val
 
 The generator orders releases by publication time and safely encodes XML and inline release notes.
 
-The reporter reads CloudFront standard-log files, deduplicates rows by edge request ID, and returns JSON with update checks, versions, operating systems, and estimated current-version adoption. Its optional HTML output is static. These measurements are update checks—not installations or completed downloads.
+The reporter reads CloudFront standard-log files (plain or gzip), deduplicates rows by edge request ID, and returns JSON with update checks per day, feed and app version, plus breakdowns of Sparkle's opt-in system profiles: macOS version, chip, approximate Mac model year, Mac family, memory, cores, language, locale, and build. A check is any `200` or `304` feed response to a Sparkle client. Requests from other Sparkle apps that read the feed on a user's behalf (update checkers such as Latest) are counted separately under `byOtherChecker`, and non-Sparkle requests are ignored. Sparkle sends a system profile at most weekly per install, so `profiles.distinct` over a seven-day window approximates the number of opted-in installs. These measurements are update checks—not installations or completed downloads.
+
+```sh
+# Weekly report with changes against the previous week's JSON
+node src/cli.mjs report appcast.json logs/*.gz \
+  --since 2026-11-02 --until 2026-11-08 \
+  --previous last-week.json --markdown report.md > this-week.json
+```
+
+`--since` and `--until` are inclusive UTC dates. `--markdown` writes tables suitable for an issue comment or email; `--html` writes a static page.
 
 ## Static hosting
 
